@@ -40,10 +40,18 @@ vignettes/*.pdf
 .Renviron
 
 # pkgdown site
-docs/
+
 
 # translation temp files
 po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+
+#macOS
+.DS_Store
+
+#Quarto
+.quarto/
+*_files/
