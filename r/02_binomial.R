@@ -65,3 +65,29 @@ binomial_price_european <- function(S, K, r, q, sigma, T, N, type = "call") {
   
   V  # now length 1: the price today
 }
+
+
+# --- American options ----------------------------------------------
+# Same backward walk, but at every node take the larger of
+# (hold: discounted risk-neutral average) and (exercise now: payoff).
+
+binomial_price <- function(S, K, r, q, sigma, T, N, type = "call",
+                           american = FALSE) {
+  
+  cp <- crr_params(sigma, r, q, T, N)
+  V  <- terminal_values(S, cp$u, cp$d, N, K, type)
+  
+  for (i in (N - 1):0) {
+    hold <- exp(-r * cp$dt) * (cp$p * V[-1] + (1 - cp$p) * V[-length(V)])
+    
+    if (american) {
+      S_i      <- terminal_prices(S, cp$u, cp$d, i)
+      exercise <- option_payoff(S_i, K, type)
+      V <- pmax(hold, exercise)
+    } else {
+      V <- hold
+    }
+  }
+  
+  V
+}
