@@ -91,3 +91,15 @@ binomial_price <- function(S, K, r, q, sigma, T, N, type = "call",
   
   V
 }
+
+# --- Convergence: price vs number of steps -------------------------
+N_values <- seq(10, 500, by = 10)
+
+conv_call <- sapply(N_values, function(n) {
+  binomial_price(100, 100, 0.05, 0.02, 0.2, 1, n, "call")
+})
+
+plot(N_values, conv_call, type = "b", pch = 16, col = "steelblue",
+     xlab = "Number of steps (N)", ylab = "Call price",
+     main = "Binomial call price vs. number of steps")
+
