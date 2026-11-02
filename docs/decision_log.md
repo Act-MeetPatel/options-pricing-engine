@@ -88,3 +88,22 @@
 | 84 | P4 S8 | Write `docs/phase4.md` | none | Same pattern as earlier phases | Includes the two bugs and my wrong guesses |
 | 85 | P4 S9 | Decision log rows given at the end of the phase | none | Your choice | Reminder given while rows were pending |
 | 86 | P4 S9 | One commit closes Phase 4 | Git tab | Clean history | Message: "Phase 4: Monte Carlo, variance reduction, Asian and barrier" |
+| 87 | P5a S1 | Pull TSLA prices with `quantmod`, use Adjusted | `getSymbols()`, `Ad()` | Adjusted stays correct through splits and dividends | 250 rows, Nov 2025 to Oct 2026 |
+| 88 | P5a S2 | Daily log returns | `na.omit(diff(log(prices)))` | Same kind of return as the simulation checks | 249 returns; hand check matched |
+| 89 | P5a S3 | Annualize with sqrt(252) | `hist_vol()` | Volatility grows with the square root of time | 45.3% |
+| 90 | P5a S4 | Three windows: 30, 90, 365 days | `vol_window()` | Volatility changes over time | 36.4%, 51.0%, 45.3%; 365 is all 249 returns |
+| 91 | P5a S5 | Rolling 30-day volatility plot | `rollapply()` | Shows volatility through time | I predicted 220 values; got 249 (29 NA). Range 29.7% to 69.8% |
+| 92 | P5a S5 | Plot as numbers against dates | `plot(as.numeric(...) ~ index(...))` | `abline()` did not draw on the time-series plot | My red line was described but not drawn |
+| 93 | P5b S6 | Pull the chain for all expiries | `getOptionChain("TSLA", Exp = NULL)` | Needed an expiry to use | I predicted nearest expiry only; got 22 |
+| 94 | P5b S7 | Save a CSV snapshot | `write.csv()` in `data/` | Reproducible if Yahoo breaks | Jan 15, 2027 expiry, 248 rows |
+| 95 | P5b S8 | Clean quotes: bid and ask above 0, OI above 0, 70% to 130% of spot, out of the money, passes bounds | `check_bounds()` | Stale and impossible quotes | 248 rows became 24 |
+| 96 | P5b S8 | r = 4% placeholder, q = 0 | `r_in`, `q_in` | No real yield in hand | Must be replaced with a real yield later |
+| 97 | P5b S10 | Implied volatility at each strike | `bs_implied_vol()` | Builds the smile | 0 failures; round trip 35.50017 |
+| 98 | P5b S11 | Back out spot from put-call parity at strike 400 | `Cm - Pm + 400*exp(-r*T)` | Downloaded close looked stale | Spot 404.37 vs 399.81 |
+| 99 | P5b S11 | Redo implied volatility with the implied spot | `spot2`, `iv2` | Center jump fell from 5.7 to 0.4 points | One strike only; rate error moves spot by about 0.8 per point |
+| 100 | P5b S12 | Save smile plot | `png()` | Used in doc | Red puts, blue calls, one curve |
+| 101 | P5b S13 | Compare implied with three historical windows | `vols` | "Rich or cheap" depends on window | 44.1% vs 36.4%, 51.0%, 45.3% |
+| 102 | P5b S14 | Model price with 45.3% vs market mid | `clean$model`, `clean$diff` | Shows where one volatility fails | Puts +0.87 avg, calls -1.79 avg |
+| 103 | P5b S15 | Save model vs. market plot | `png()` | Used in doc | Tent shape; 400 call may be cut off at the top edge |
+| 104 | P5 S16 | Write `docs/phase5.md` | none | Same pattern as earlier phases | Includes mistakes and limits |
+| 105 | P5 S16 | One commit closes Phase 5 | Git tab | Clean history | Message: "Phase 5: market data, implied volatility, smile" |
