@@ -69,3 +69,22 @@
 | 65 | P3 S11 | Write `docs/phase3.md` | none | Your request | Includes glossary, units, bump-check explanation |
 | 66 | P3 S12 | One commit closes Phase 3 | Git tab | Clean history | Message: "Phase 3: Black-Scholes, Greeks, implied volatility" |
 | 67 | Process | After every step I tell you to paste the log row | none | I forgot to tell you for rows 27-66 | Your log was 25 rows behind until now |
+| 68 | P4 S1 | Simulate terminal stock price under the risk-neutral measure | `simulate_terminal()`, `set.seed(3130)` | Monte Carlo averages payoffs over simulated prices | Drift is r − q − ½σ² |
+| 69 | P4 S1 | Three simulation tests: size and sign, average price, log-return mean and sd | none | Each checks a different part of the formula | Mean 103.12 (target 103.05), sd 0.2008 (target 0.2) |
+| 70 | P4 S1 | My "within 0.2" tolerance was a rough guess | none | Real noise is about 0.08 | Your gap of 0.07 was typical |
+| 71 | P4 S2 | Return price, SE and 95% interval together | `mc_price()` | A Monte Carlo price without its error is incomplete | Call 9.299, put 6.334; both intervals contain the exact price |
+| 72 | P4 S2 | Error "could not find option_payoff" | none | Phases 1 to 3 were not loaded in the session | Use the Source button to run the whole file in order |
+| 73 | P4 S3 | Coverage check: 200 runs of 10,000 simulations | `replicate()` | One pass could be luck | 196 of 200 (98%); SE is honest |
+| 74 | P4 S4 | Antithetic variates, SE from pair averages | `mc_price_anti()` | Pairs are not independent | Call SE 0.0325 (26% smaller); coverage 95.5% |
+| 75 | P4 S5 | Control variate using the discounted stock price | `mc_price_cv()` | Its exact mean S·e^(−qT) = 98.02 is known | Call SE 0.0180 (59% smaller); coverage 95.0% |
+| 76 | P4 S5 | b is a slope, not a correlation | `cov(Y, X) / var(X)` | We need how much to correct | Call b = +0.639, put b = −0.361; differ by exactly 1 (parity) |
+| 77 | P4 S6a | Simulate whole paths as an n × m matrix | `simulate_paths()` | Asian and barrier payoffs need the full path | Mean at expiry 103.07, sd 0.1997 |
+| 78 | P4 S6b | Asian option on the average of 50 points | `mc_asian()` | No simple formula, so simulate | Call 5.2835, put 3.7822 |
+| 79 | P4 S6b | Bug: with m = 1, R flattened the matrix | `matrix(..., nrow = n)` | All paths collapsed into one number, SE was NA | Caught only by the m = 1 test; after the fix it equals the plain call exactly |
+| 80 | P4 S6c | Down-and-out barrier call with a barrier shift | `mc_barrier()` | 50 points miss dips between points, so the price is too high | No adjustment: 8.059 |
+| 81 | P4 S6c | Bug: I used the wrong sign on the barrier shift | `exp(+0.5826 * sigma * sqrt(dt))` | The barrier must move toward the stock | Wrong sign 8.417; fixed 7.593 |
+| 82 | P4 S6d | Exact continuous barrier formula as an answer key | `bs_down_out_call()` | Independent check of the simulation | Exact 7.5870; adjusted interval contains it; B = 1 gives 9.2270 |
+| 83 | P4 S7 | Save two plots from code | `png()` ... `dev.off()` | Used in the Phase 4 doc | SE values in the bar chart were typed by hand from outputs |
+| 84 | P4 S8 | Write `docs/phase4.md` | none | Same pattern as earlier phases | Includes the two bugs and my wrong guesses |
+| 85 | P4 S9 | Decision log rows given at the end of the phase | none | Your choice | Reminder given while rows were pending |
+| 86 | P4 S9 | One commit closes Phase 4 | Git tab | Clean history | Message: "Phase 4: Monte Carlo, variance reduction, Asian and barrier" |
