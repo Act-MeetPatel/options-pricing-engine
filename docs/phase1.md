@@ -98,3 +98,12 @@ Verified against the constructed C, P above: both within bounds; a
 deliberately absurd call price (150 on a 100 stock) correctly flagged
 out of bounds; American put upper bound correctly jumps from
 `K*exp(-rT)`=95.12 to K=100.
+
+## Sources
+
+- Put-call parity, the replication argument and the no-arbitrage bounds are
+  standard derivative-pricing results. They were worked out step by step in
+  this project; no specific textbook page was checked.
+- Checked numerically: parity holds to rounding error (about 1e-13 to
+  1e-15) on the tree and Black-Scholes prices in Phases 2 and 3.
+- Full list and status of every source: `docs/sources.md`.

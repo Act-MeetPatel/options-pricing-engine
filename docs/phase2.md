@@ -76,3 +76,15 @@ is checked against Black-Scholes in Phase 3.
 - My first test for p never triggered the error (sigma = 3 was valid).
 - I used d = 0.9 by hand; the code correctly used d = 1/1.1.
 - I predicted a higher American call price. The code showed identical.
+
+## Sources
+
+- Cox-Ross-Rubinstein tree (u = exp(sigma sqrt(dt)), d = 1/u, risk-neutral
+  p): Cox, Ross and Rubinstein (1979), "Option pricing: a simplified
+  approach", Journal of Financial Economics. Formulas written from memory;
+  the original paper was not read.
+- Risk-neutral probability idea: Marchesi, "Black-Scholes From Scratch"
+  (slides, Oct 2026).
+- Checked numerically: the tree converges to the Black-Scholes price
+  (Phase 3), and European tree prices satisfy put-call parity to about 1e-13.
+- Full list and status of every source: `docs/sources.md`.

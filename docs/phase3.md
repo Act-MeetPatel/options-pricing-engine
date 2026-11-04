@@ -114,3 +114,15 @@ This is how Phase 5 turns real market prices into a volatility number.
 ## Mistakes caught along the way
 
 - None in the code this phase. All tests matched predictions.
+
+## Sources
+
+- Black-Scholes formula and the risk-neutral derivation: Marchesi,
+  "Black-Scholes From Scratch" (slides, Oct 2026), slides 21 to 37. The
+  slides assume no dividends; the dividend-yield version (q) is the standard
+  extension, written from memory.
+- Greeks formulas: standard results written from memory, not taken from a
+  specific page. Each was checked against a "bump" calculation.
+- Original paper: Black and Scholes (1973), Journal of Political Economy.
+  Not read.
+- Full list and status of every source: `docs/sources.md`.

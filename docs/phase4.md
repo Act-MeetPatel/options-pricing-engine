@@ -84,6 +84,10 @@ Checking only 50 points misses dips between points, so the simulated
 price is too high. Fix: shift the barrier toward the stock by
 `B * exp(+0.5826 * sigma * sqrt(dt))` (about 91.5).
 
+(Broadie, Glasserman and Kou shift the barrier away from the stock to price
+a discrete option with the continuous formula; here we use the inverse, to
+make a discrete simulation match the continuous formula. See sources.md.)
+
 | Version | Price |
 |---|---|
 | No adjustment | 8.059 |
@@ -110,3 +114,17 @@ With B = 1 the barrier call equals the plain call (9.2270 exact).
 - Barrier adjustment: I predicted and coded the wrong sign (barrier
   moved away from the stock). The exact formula exposed it.
 - Several rough guesses of mine were off (SE ranges, Asian put range).
+
+## Sources
+
+- Stock simulation under the risk-neutral measure: Marchesi, "Black-Scholes
+  From Scratch" (slides, Oct 2026), slide 32, with the dividend yield added.
+- Antithetic and control variates: standard Monte Carlo methods written from
+  memory. Checked by coverage tests (95% to 98%).
+- Barrier shift 0.5826: Broadie, Glasserman and Kou (1997), Mathematical
+  Finance 7(4), 325-349. The constant is also confirmed in Howison and
+  Steinberg (2005). The full text of the 1997 paper was not read.
+- Exact down-and-out call formula: standard continuous-barrier result typed
+  from memory; no page checked. It agrees with the adjusted simulation
+  (7.5870 vs. 7.593).
+- Full list and status of every source: `docs/sources.md`.

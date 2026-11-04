@@ -70,6 +70,7 @@ ui <- fluidPage(
     tabPanel("Pricing",
              sidebarLayout(
                sidebarPanel(
+                 helpText("Demo values. Every number below is an assumption you can change; none is live market data."),
                  radioButtons("type", "Option type", c("call", "put"), inline = TRUE),
                  numericInput("S", "Stock price (S)", 100),
                  numericInput("K", "Strike (K)", 100),
@@ -106,7 +107,8 @@ ui <- fluidPage(
     tabPanel("Seg fund",
              sidebarLayout(
                sidebarPanel(
-                 h4("Product"),
+                 helpText("Every value in this tab is an assumption, not a fact. Volatility (20%) and expected return mu (7%) are placeholders. Lapse (5%), age and the fee are assumptions. The interest rate is the Bank of Canada 10-year yield, used as a stand-in for a risk-free rate."),
+                 h4("Product (assumptions)"),
                  numericInput("sf_P0", "Premium invested (P0)", seg_defaults()$P0),
                  numericInput("sf_G", "Guarantee at maturity (G)", seg_defaults()$G),
                  numericInput("sf_T", "Term in years (T)", seg_defaults()$T),
@@ -119,7 +121,7 @@ ui <- fluidPage(
                  h4("Policyholder (assumptions)"),
                  numericInput("sf_age", "Issue age", seg_defaults()$age),
                  numericInput("sf_lapse", "Lapse rate per year", seg_defaults()$lapse, step = 0.01),
-                 h4("Mortality (Gompertz-Makeham)"),
+                 h4("Mortality (Gompertz-Makeham, parameters from course notes)"),
                  numericInput("sf_A", "A", seg_defaults()$gm$A, step = 0.00001),
                  numericInput("sf_B", "B", seg_defaults()$gm$B, step = 0.0000001),
                  numericInput("sf_C", "C", seg_defaults()$gm$C, step = 0.001),
@@ -154,7 +156,7 @@ ui <- fluidPage(
                  actionButton("mk_load", "Load market data", class = "btn-primary"),
                  selectInput("mk_expiry", "Option expiry", choices = character(0)),
                  h4("Inputs (assumptions)"),
-                 numericInput("mk_r", "Interest rate (r, typed in)", 0.04, step = 0.0025),
+                 numericInput("mk_r", "Interest rate (r, typed in; 4% is a placeholder, not a market rate)", 0.04, step = 0.0025),
                  numericInput("mk_q", "Dividend yield (q). 0 suits TSLA; enter the yield for dividend payers", 0, step = 0.005),
                  numericInput("mk_lo", "Strike window, lowest (% of spot)", 70, step = 5),
                  numericInput("mk_hi", "Strike window, highest (% of spot)", 130, step = 5),

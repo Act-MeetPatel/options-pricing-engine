@@ -106,3 +106,15 @@ A single volatility cannot match a market that shows a smile.
 - Rolling windows returned 249 values (29 `NA`), not 220.
 - My first spot assumption was stale. Parity exposed it.
 - Several rough guesses were off (call gap size, plot shape).
+
+## Sources
+
+- Prices and option chain: Yahoo Finance, pulled through the `quantmod` R
+  package. TSLA prices to 2026-10-30; the chain was pulled on 2026-11-02 and
+  saved in `data/`. Yahoo data can lag by a day.
+- Volatility: daily log returns, annualized by sqrt(252) (a standard
+  convention).
+- Implied spot from put-call parity: the Phase 1 relationship, applied to
+  one strike.
+- Interest rate: 4% is a placeholder, not a market value.
+- Full list and status of every source: `docs/sources.md`.
