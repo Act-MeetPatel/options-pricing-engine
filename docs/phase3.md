@@ -55,11 +55,11 @@ ONE thing changes?**
 |---|---|---|---|
 | **Delta** | Option price change when the stock moves $1 | 0.5869: stock up $1, call up about $0.59 | Call +, put - |
 | **Gamma** | How fast delta changes when the stock moves $1 | 0.0190: stock up $1, delta rises by 0.019 | Always + for a long option |
-| **Vega** | Option price change when volatility moves 1 point | 0.3814: vol 20% to 21%, call up about $0.38 | Always + for a long option |
+| **Vega** | Option price change when volatility moves 1 point | 0.3790: vol 20% to 21%, call up about $0.38 | Always + for a long option |
 | **Theta** | Value lost per day from time passing | -0.0139: one day passes, call loses about $0.014 | Usually - for a long option |
-| **Rho** | Option price change when the rate moves 1 point | 0.4945: rate 5% to 6%, call up about $0.49 | Call +, put - |
+| **Rho** | Option price change when the rate moves 1 point | 0.4946: rate 5% to 6%, call up about $0.49 | Call +, put - |
 
-Put values: delta -0.3933, theta -0.0063, rho -0.4578. Gamma and vega
+Put values: delta -0.3933, theta -0.0063, rho -0.4566. Gamma and vega
 are the same for call and put.
 
 **Units:** vega and rho are per 1 point (divided by 100). Theta is per

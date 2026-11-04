@@ -128,3 +128,49 @@
 | 124 | P6 S11 | Save two plots | `png()` | Used in the doc | `seg_hedge_error.png` uses the no-decrement hedge |
 | 125 | P6 S12 | Write `docs/phase6.md` | none | Same pattern as earlier phases | Includes assumptions, sources, mistakes |
 | 126 | P6 S13 | One commit closes Phase 6 | Git tab | Clean history | Message: "Phase 6: seg fund guarantee, fair fee, hedging, CTE" |
+| 127 | P7 S1 | Learn Shiny with a toy app first | `app/toy_app.R` | Shiny is new to you | Slider test passed (130 gives call 30; 70 gives put 30) |
+| 128 | P7 S2 | Create `r/engine.R`: functions only, no plots or loops | `engine.R` | The app must start fast and not redraw plots | Loads in 0.001 s. Phases 1-3 and tree numbers reproduced exactly |
+| 129 | P7 S2 | **INCONSISTENCY: engine functions are duplicated** | `engine.R` vs. `01`-`06` scripts | Phase scripts left unchanged so the documented results stay reproducible | A fix in one copy will not reach the other |
+| 130 | P7 S2 | Implied vol round trip is 2e-6 off | `bs_implied_vol()` | `uniroot()` stopping tolerance | Same as Phase 3. Not a copying error |
+| 131 | P7 S3 | Monte Carlo pricers share a helper | `mc_summary()` | Less repeated code | Results identical to Phase 4 to every digit |
+| 132 | P7 S3 | Asian and barrier options not copied to the engine | none | The app doesn't use them | They exist only in `04_monte_carlo.R` |
+| 133 | P7 S4 | **INCONSISTENCY: mortality parameters moved into the assumptions list** | `a$gm` in `engine.R` | You asked for every assumption to be adjustable | Phase 6 script uses a global `gm` |
+| 134 | P7 S4 | **INCONSISTENCY: default rate set in one place** | `seg_defaults()` | Single source for defaults | Phase 6 script starts at 0.04 then sets 0.038; the engine starts at 0.038 |
+| 135 | P7 S4 | Seg fund defaults in one function | `seg_defaults()` | The app fills its input boxes from it | All values remain assumptions |
+| 136 | P7 S5 | Hedging and reserve functions copied; guarantee charge defaults to the fair fee | `guar_charge()` | A user who changes sigma gets a consistent answer | **INCONSISTENCY:** Phase 6 sets `guar_fee` by hand. All Phase 6 numbers reproduced (parity gap 4.4e-13) |
+| 137 | P7 S6 | Pricing tab; the app loads the engine with a path fallback | `app/app.R` | Run App changes the working folder to `app/` | American box for the tree only; seed is an input. Defaults reproduce 9.2270, 6.3301, 9.1882, 9.2990 |
+| 138 | P7 S6 | Fix: error message showed twice | `tryCatch`, `req` | Two outputs read the same failing calculation | My test only checked that the app did not crash |
+| 139 | P7 S6 | Progress box for slow calculations | `withProgress` | You asked for a loading indicator | The tree took 0.017 s at N = 500, so my keystroke guess for the wait was wrong |
+| 140 | P7 S6 | Cap tree steps at 5,000 | `validate` | N = 500,000 froze R until it ended | Timings: 0.017, 0.038, 0.093, 0.377 s at N = 500, 1,000, 2,000, 5,000. My N-squared estimate was too pessimistic (2.2 to 2.4 times per doubling). N above 5,000 not timed |
+| 141 | P7 S3a | Break-even and Greeks on the Pricing tab; Greeks for Black-Scholes only | `output$greeks` | The Greek formulas are for European options | Break-even is at expiry and ignores interest on the premium |
+| 142 | P7 S3b | Payoff plot shows the long position at expiry | `output$payoff` | A picture of profit or loss | Ignores early exercise and premium interest |
+| 143 | P7 S4a | Style copied from your life insurance dashboard | `bslib` flatly theme, cards, footer | Your request | 📈 watermark instead of the shield; app updates live, no Calculate button |
+| 144 | P7 S4a | Progress box moved to the bottom left | CSS `#shiny-notification-panel` | It covered the footer | I first tried the top right; you chose the bottom left |
+| 145 | P7 S4a | UI syntax errors: a double comma, then a missing bracket that nested the Market tab inside Seg fund | full `ui` block replaced | My indentation-based instructions did not match your re-indented file | A duplicated radio button came later |
+| 146 | P7 S4b | Seg fund tab, pricing card | `sf_` inputs, `seg_defaults()` | Every assumption adjustable, including mortality parameters | Phase 6 numbers matched (13.7714, 8.0830, 0.7883%) |
+| 147 | P7 S4c | Hedging and reserve results run on a button | `eventReactive`, cap 6,000,000 on paths x term x hedges per year | Thousands of paths take seconds | Cap chosen by judgement, untimed. Shows the hedge with decrements only. Results stale until you click again |
+| 148 | P7 S4c | Hedging and reserve in their own card | `div(class = "result-card")` | Your request | |
+| 149 | P7 S5a | Live Government of Canada yield | `fetch_goc_yield()` | Official series, no key | 10-year 3.74% (2026-11-02), 2-year 3.26%. Fallback 3.8% dated 2026-10-15. Wi-Fi-off test not run |
+| 150 | P7 S5b | Seg fund rate box filled from the live yield, with a button and a manual override | `goc_info`, `sf_rate_note` | You asked for automatic with override | The 10-year yield is a stand-in for a risk-free rate. You did not report the five app tests |
+| 151 | P7 M | Market tab rate is typed in, default 4% | `mk_r` | No verified short-term or US source | A live fetch could be added later |
+| 152 | P7 M1 | Safe snapshot function: never overwrites, date from the clock | `save_chain_snapshot()` | Phase 5 overwrote the file and hardcoded the date | Not connected to the app. I predicted 10 columns; the answer was 8 |
+| 153 | P7 M2 | Market data loader returns an error entry instead of failing | `fetch_market()` | The app must not crash on a bad ticker | My first bad-ticker test (11 characters) never reached Yahoo; a friendly message was added |
+| 154 | P7 M2 | Observed: Yahoo history lags by about a day | none | Checked on two dates | Ended 2026-11-02 on the evening of 11-03. Monday close 403.82 vs. option-implied 404.37 |
+| 155 | P7 M3 | Volatility functions copied to the engine | `hist_vol()`, `vol_window()` | The Market tab needs them | **INCONSISTENCY:** duplicated. Phase 5 value 0.4526294 reproduced exactly |
+| 156 | P7 M1 | Market tab skeleton: empty ticker box with a hint; dropdown pre-selects the first expiry at least 30 days out | `mk_load` | You asked for no default ticker | I did not say the dropdown did nothing until the chain piece existed |
+| 157 | P7 M2 | Clean one expiry's chain with the Phase 5 rules and a count per rule | `clean_chain()` | Stale and impossible quotes | Reproduces 248 to 24. Days to expiry come from the computer's date |
+| 158 | P7 M3 | Option-implied spot: median over up to 5 strikes, with q | `implied_spot()` | The close can be stale | 404.1558 vs. 404.3693 for one strike. Ignores American early exercise; falls back to the close |
+| 159 | P7 M3 | Bug: a missing radio crashed the server, then a duplicated radio | `identical()` fallback | `NULL == "implied"` gave `NA` | Detect duplicates with a Console count (expected 3) |
+| 160 | P7 M4 | Smile: implied volatility per quote; unsolved quotes counted and left out | `add_implied_vol()` | Shows the smile | Phase 5 numbers reproduced |
+| 161 | P7 M5a | Near-the-money implied volatility; closest window uses trading-day equivalents | `atm_iv()`, `closest_window()` | Compare implied with historical | **Correction:** in Phase 5 I compared calendar days with trading days. 0.4413904 reproduced |
+| 162 | P7 M5b | Model price vs. market price at a chosen historical volatility | `model_vs_market()` | Shows where one volatility fails | Gap = market mid minus model. Phase 5 numbers reproduced |
+| 163 | P7 M5b | App results matched the predicted order | volatility dropdown | Lower model volatility gives larger gaps | Put average gap +2.622, +0.804, -0.483 for 30 days, 1 year, 90 days |
+| 164 | P7 clean-up | Barrier constant 0.5826 confirmed | `docs/sources.md`, `phase4.md` | You asked for proper sources | Confirmed against the paper's abstract and Howison and Steinberg (2005). The down-and-out formula is still unverified; the 1997 paper's full text was not read |
+| 165 | P7 clean-up | Sources sections added to the Phase 1-5 docs | `## Sources` | You asked for proper citations | "Verified" in `sources.md` means numerically checked, not that the paper was read |
+| 166 | P7 clean-up | Assumption notes in the app | `helpText()` | A user can see which numbers are assumptions | Market rate label says 4% is a placeholder |
+| 167 | P7 doc | Write `docs/phase7.md` with five screenshots | `outputs/app_*.png` | You made five; I had asked for four | I gave edits to `phase7.md` before the file existed |
+| 168 | P7 doc | **Correction:** vega, call rho and put rho in `phase3.md` | docs only | The code was right; my expected values were arithmetic slips | Correct: 0.3790, 0.4946, -0.4566. I had treated "they match" as confirmation |
+| 169 | P7 doc | Smile spot about 387 vs. last close 398.50 | none | Observed in the 2026-11-04 screenshots | Explanation (intraday price) is unverified |
+| 170 | P7 doc | Legend text overflows the plot edge | none | Cosmetic | Not fixed |
+| 171 | P7 | Snapshot button skipped | none | Your choice | The app does not save snapshots |
+| 172 | P7 | Commit: app docs, screenshots, decision log | Git tab | Clean history | Message: "Phase 7: app docs, screenshots, decision log" |
