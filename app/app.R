@@ -110,26 +110,40 @@ ui <- fluidPage(
                  h4("Market (assumptions)"),
                  numericInput("sf_sigma", "Volatility (sigma)", seg_defaults()$sigma, step = 0.01),
                  numericInput("sf_r", "Interest rate (r)", seg_defaults()$r, step = 0.0025),
+                 actionButton("sf_fetch_rate", "Fetch latest Canada 10-year yield"),
+                 textOutput("sf_rate_note"),
                  h4("Policyholder (assumptions)"),
                  numericInput("sf_age", "Issue age", seg_defaults()$age),
                  numericInput("sf_lapse", "Lapse rate per year", seg_defaults()$lapse, step = 0.01),
                  h4("Mortality (Gompertz-Makeham)"),
                  numericInput("sf_A", "A", seg_defaults()$gm$A, step = 0.00001),
                  numericInput("sf_B", "B", seg_defaults()$gm$B, step = 0.0000001),
-                 numericInput("sf_C", "C", seg_defaults()$gm$C, step = 0.001)
+                 numericInput("sf_C", "C", seg_defaults()$gm$C, step = 0.001),
+                 h4("Hedging and reserve (real world, assumptions)"),
+                 numericInput("sf_mu", "Expected market return (mu)", seg_defaults()$mu, step = 0.01),
+                 numericInput("sf_steps", "Hedges per year", seg_defaults()$hedge_steps, min = 1, step = 1),
+                 numericInput("sf_paths", "Simulated paths", seg_defaults()$n_paths, min = 500, step = 500),
+                 numericInput("sf_cte", "CTE level (e.g. 0.95)", seg_defaults()$cte_level, step = 0.01),
+                 numericInput("sf_seed", "Random seed", seg_defaults()$seed),
+                 actionButton("sf_run", "Run hedging and reserve simulation", class = "btn-primary")
                ),
                mainPanel(
                  div(class = "result-card",
                      h3("Results"),
                      tableOutput("sf_table"),
-                     textOutput("sf_note"))
+                     textOutput("sf_note")),
+                 div(class = "result-card", style = "margin-top: 20px;",
+                     h3("Hedging and reserve (real world)"),
+                     tableOutput("sf_sim"),
+                     textOutput("sf_sim_note"))
+               )
                )
              )
     )
   )
-)
 
-server <- function(input, output) {
+
+server <- function(input, output, session) {
   res <- reactive({
     withProgress(message = "Calculating...", value = 0.5, calc())
   })
@@ -285,6 +299,117 @@ server <- function(input, output) {
     req(x)
     if (is.na(x$fair)) "The fair fee could not be found for these inputs."
     else "Risk-neutral pricing. Mortality and lapses are assumed independent of each other and of the market. The fair fee treats the whole fee as the guarantee charge."
+  })
+  
+  # ---- Seg fund tab: hedging and reserve (REAL-WORLD measure) ----
+  sf_sim <- eventReactive(input$sf_run, {
+    a <- sf_assump()
+    validate(
+      need(is.finite(input$sf_mu), "Enter an expected return (mu)."),
+      need(is.finite(input$sf_steps) && input$sf_steps >= 1 &&
+             input$sf_steps == round(input$sf_steps),
+           "Hedges per year must be a whole number, 1 or more."),
+      need(is.finite(input$sf_paths) && input$sf_paths >= 500 &&
+             input$sf_paths == round(input$sf_paths),
+           "Use at least 500 paths (a whole number)."),
+      need(is.finite(input$sf_cte) && input$sf_cte > 0 && input$sf_cte < 1,
+           "CTE level must be between 0 and 1."),
+      need(is.finite(input$sf_seed), "Enter a seed.")
+    )
+    a$mu <- input$sf_mu;           a$hedge_steps <- input$sf_steps
+    a$n_paths <- input$sf_paths;   a$seed <- input$sf_seed
+    a$cte_level <- input$sf_cte
+    validate(
+      need(abs(a$T * a$hedge_steps - round(a$T * a$hedge_steps)) < 1e-8,
+           "Term times hedges per year must be a whole number."),
+      need(a$n_paths * a$T * a$hedge_steps <= 6e6,
+           "Too large: paths x term x hedges per year must be 6,000,000 or less.")
+    )
+    
+    withProgress(message = "Simulating...", value = 0.5, {
+      ff <- tryCatch(fair_fee(a), error = function(e) NA_real_)
+      validate(need(!is.na(ff), "The fair fee could not be found for these inputs."))
+      a$guar_fee <- ff
+      
+      set.seed(a$seed)
+      F   <- simulate_fund_real(a, a$n_paths)
+      last <- ncol(F)
+      err <- hedge_error_dec(a, F)
+      pay <- in_force(a) * pmax(a$G - F[, last], 0)
+      L   <- unhedged_loss(a, F)
+      L2  <- unhedged_loss_dec(a, F)
+      
+      list(below = mean(F[, last] < a$G),
+           pay_sd = sd(pay), err_mean = mean(err), err_sd = sd(err),
+           removed = 1 - sd(err) / sd(pay),
+           L_mean = mean(L),   L_cte = cte(L, a$cte_level),
+           L2_mean = mean(L2), L2_cte = cte(L2, a$cte_level),
+           fee = ff, level = a$cte_level)
+    })
+  })
+  
+  output$sf_sim <- renderTable({
+    x <- sf_sim()
+    data.frame(
+      Measure = c("Share of paths where the fund ends below the guarantee",
+                  "Unhedged payout, SD (per policy sold)",
+                  "Hedge error, mean (per policy sold)",
+                  "Hedge error, SD (per policy sold)",
+                  "Risk removed by the hedge",
+                  "Mean loss, with mortality and lapses",
+                  paste0("CTE", 100 * x$level, ", with mortality and lapses"),
+                  "Mean loss, no mortality or lapses",
+                  paste0("CTE", 100 * x$level, ", no mortality or lapses"),
+                  "Guarantee fee used (fair fee, per year)"),
+      Value = c(sprintf("%.4f", x$below),
+                sprintf("%.4f", x$pay_sd),
+                sprintf("%.4f", x$err_mean),
+                sprintf("%.4f", x$err_sd),
+                sprintf("%.1f%%", 100 * x$removed),
+                sprintf("%.4f", x$L2_mean),
+                sprintf("%.4f", x$L2_cte),
+                sprintf("%.4f", x$L_mean),
+                sprintf("%.4f", x$L_cte),
+                sprintf("%.4f%%", 100 * x$fee)))
+  })
+  
+  output$sf_sim_note <- renderText({
+    if (input$sf_run == 0) {
+      "Click the button to run the simulation (a few seconds)."
+    } else {
+      x <- tryCatch(sf_sim(), error = function(e) NULL)
+      req(x)
+      "Real-world simulation (the market grows at mu, not r). Results are from the last click, so click again after changing any input. Assumptions: lapses independent of the market, large pool, delta hedge with no transaction costs, volatility known and constant."
+    }
+  })
+  
+  # ---- Seg fund tab: live Canada 10-year yield ----
+  goc_info <- reactiveVal(NULL)
+  
+  fetch_and_fill <- function() {
+    withProgress(message = "Fetching rate...", value = 0.5, {
+      g <- fetch_goc_yield()
+      goc_info(g)
+      updateNumericInput(session, "sf_r", value = g$rate)
+    })
+  }
+  
+  observeEvent(TRUE, fetch_and_fill(), once = TRUE)     # once, on start
+  observeEvent(input$sf_fetch_rate, fetch_and_fill())   # on each click
+  
+  output$sf_rate_note <- renderText({
+    g <- goc_info()
+    if (is.null(g)) return("Fetching the latest rate...")
+    r <- input$sf_r
+    if (!is.finite(r)) return("Enter an interest rate.")
+    if (abs(r - g$rate) > 1e-9) {
+      "Rate source: manual value (you changed it)."
+    } else if (g$source == "live") {
+      paste0("Rate source: Bank of Canada 10-year yield, ", g$date, " (live).")
+    } else {
+      paste0("Rate source: SAVED fallback, ", sprintf("%.2f%%", 100 * g$rate),
+             " from ", g$date, ". Could not reach the Bank of Canada.")
+    }
   })
 }
 

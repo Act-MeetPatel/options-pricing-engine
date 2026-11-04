@@ -312,3 +312,29 @@ unhedged_loss_dec <- function(a, F) {
 cte <- function(loss, level) {
   mean(loss[loss >= quantile(loss, level)])
 }
+
+
+# --- Live Government of Canada yield (Bank of Canada Valet API) ---
+# Returns the rate as a decimal. Falls back to a saved value on any failure.
+fetch_goc_yield <- function(series = "BD.CDN.10YR.DQ.YLD",
+                            fallback = 0.038,
+                            fallback_date = "2026-10-15") {
+  old <- options(timeout = 10)
+  on.exit(options(old))
+  link <- paste0("https://www.bankofcanada.ca/valet/observations/",
+                 series, "/json?recent=1")
+  out <- tryCatch({
+    txt <- suppressWarnings(paste(readLines(url(link), warn = FALSE),
+                                  collapse = ""))
+    x   <- jsonlite::fromJSON(txt, simplifyVector = FALSE)
+    obs <- x$observations[[1]]
+    val <- as.numeric(obs[[series]]$v)
+    if (!is.finite(val) || val <= 0 || val > 25) stop("unexpected value")
+    list(rate = val / 100, date = obs$d, source = "live")
+  }, error = function(e) NULL)
+  if (is.null(out)) {
+    out <- list(rate = fallback, date = fallback_date, source = "fallback")
+  }
+  out
+}
+
