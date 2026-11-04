@@ -496,3 +496,18 @@ atm_iv <- function(d, spot) {
 closest_window <- function(days, windows = c(30, 90, 252)) {
   windows[which.min(abs(windows - days * 252 / 365))]
 }
+
+
+# --- Model price (one volatility) vs market mid -----------------
+# gap = market mid minus model price, per share
+model_vs_market <- function(d, spot, r, q, T, sigma) {
+  if (nrow(d) == 0) {
+    d$model <- numeric(0)
+    d$diff  <- numeric(0)
+    return(d)
+  }
+  d$model <- mapply(function(k, ty) bs_price(spot, k, r, q, sigma, T, ty),
+                    d$Strike, d$type)
+  d$diff  <- d$mid - d$model
+  d
+}

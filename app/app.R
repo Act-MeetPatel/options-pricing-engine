@@ -181,7 +181,17 @@ ui <- fluidPage(
                  div(class = "result-card", style = "margin-top: 20px;",
                      h3("Implied vs. historical volatility"),
                      tableOutput("mk_cmp_table"),
-                     textOutput("mk_cmp_note"))
+                     textOutput("mk_cmp_note")),
+                 div(class = "result-card", style = "margin-top: 20px;",
+                     h3("Model price vs. market price"),
+                     selectInput("mk_vol_win", "Historical volatility used by the model",
+                                 choices = c("Last 30 trading days" = "30",
+                                             "Last 90 trading days" = "90",
+                                             "All returns, about 1 year" = "252"),
+                                 selected = "252"),
+                     textOutput("mk_model_note"),
+                     tableOutput("mk_model_table"),
+                     plotOutput("mk_model_plot", height = "360px"))
                )
              )
     )
@@ -662,6 +672,62 @@ server <- function(input, output, session) {
            "number means the options cost more than that period's movement would ",
            "suggest; below means less. The answer depends on the window, and ",
            "historical volatility looks backward. This is a comparison, not advice.")
+  })
+  
+  # ---- Market tab: model price vs market price ----
+  mk_model <- reactive({
+    x <- mk_iv()
+    m <- mk()
+    sig <- vol_window(m$returns, as.numeric(input$mk_vol_win))
+    req(is.finite(sig), sig > 0)
+    d <- x$data[order(x$data$Strike), ]
+    list(data = model_vs_market(d, x$spot_used, input$mk_r, input$mk_q,
+                                x$days / 365, sig),
+         sigma = sig)
+  })
+  
+  output$mk_model_note <- renderText({
+    x <- tryCatch(mk_model(), error = function(e) NULL)
+    req(x)
+    req(nrow(x$data) > 0)
+    paste0("Model: Black-Scholes at ", sprintf("%.2f%%", 100 * x$sigma),
+           " volatility for every strike. Gap = market mid minus model price, ",
+           "per share (a contract is 100 shares). One volatility cannot match a ",
+           "smile, so much of the gap is the smile itself. Black-Scholes is ",
+           "European and US stock options are American. This is a comparison, ",
+           "not advice.")
+  })
+  
+  output$mk_model_table <- renderTable({
+    x <- tryCatch(mk_model(), error = function(e) NULL)
+    req(x)
+    d <- x$data
+    req(nrow(d) > 0)
+    rows <- lapply(c("put", "call"), function(ty) {
+      g <- d$diff[d$type == ty]
+      if (length(g) == 0) return(NULL)
+      data.frame(Type = ty, Quotes = length(g),
+                 `Average gap` = sprintf("%+.3f", mean(g)),
+                 `Smallest gap` = sprintf("%+.3f", min(g)),
+                 `Largest gap` = sprintf("%+.3f", max(g)),
+                 check.names = FALSE)
+    })
+    do.call(rbind, rows)
+  })
+  
+  output$mk_model_plot <- renderPlot({
+    x <- tryCatch(mk_model(), error = function(e) NULL)
+    req(x)
+    d <- x$data
+    req(nrow(d) > 0)
+    plot(d$Strike, d$mid, pch = 16, col = "steelblue",
+         ylim = range(c(d$mid, d$model)),
+         xlab = "Strike", ylab = "Option price",
+         main = paste0("Market mid vs. model (",
+                       sprintf("%.1f%%", 100 * x$sigma), " volatility)"))
+    points(d$Strike, d$model, pch = 1, col = "firebrick", lwd = 2)
+    legend("topright", pch = c(16, 1), col = c("steelblue", "firebrick"),
+           legend = c("Market mid", "Model"), bty = "n")
   })
 }
 
