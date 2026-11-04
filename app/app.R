@@ -47,7 +47,7 @@ ui <- fluidPage(
       font-size: 12px;
       color: #888;
     }
-      #shiny-notification-panel {
+    #shiny-notification-panel {
       top: auto !important;
       bottom: 15px !important;
       left: 25px !important;
@@ -63,7 +63,10 @@ ui <- fluidPage(
   
   div(class = "footer",
       "© 2026 Meet Patel. Option Pricing Engine. For illustrative and educational purposes only."),
+  
   tabsetPanel(
+    
+    # ---------------- Tab 1: Pricing ----------------
     tabPanel("Pricing",
              sidebarLayout(
                sidebarPanel(
@@ -77,7 +80,7 @@ ui <- fluidPage(
                  selectInput("method", "Method",
                              c("Black-Scholes", "Binomial tree", "Monte Carlo")),
                  conditionalPanel("input.method == 'Binomial tree'",
-                                  numericInput("N", "Tree steps (N)", 50, min = 1, max = 5000,step = 10),
+                                  numericInput("N", "Tree steps (N)", 50, min = 1, max = 5000, step = 10),
                                   checkboxInput("american", "American (early exercise)", FALSE)),
                  conditionalPanel("input.method == 'Monte Carlo'",
                                   selectInput("mc_kind", "Variance reduction",
@@ -95,10 +98,11 @@ ui <- fluidPage(
                                       h4("Greeks"),
                                       tableOutput("greeks")),
                      plotOutput("payoff", height = "320px"))
-               
                )
              )
     ),
+    
+    # ---------------- Tab 2: Seg fund ----------------
     tabPanel("Seg fund",
              sidebarLayout(
                sidebarPanel(
@@ -137,10 +141,45 @@ ui <- fluidPage(
                      tableOutput("sf_sim"),
                      textOutput("sf_sim_note"))
                )
+             )
+    ),
+    
+    # ---------------- Tab 3: Market ----------------
+    tabPanel("Market",
+             sidebarLayout(
+               sidebarPanel(
+                 h4("Stock"),
+                 textInput("mk_ticker", "Ticker symbol", value = "",
+                           placeholder = "Enter a ticker, e.g. TSLA"),
+                 actionButton("mk_load", "Load market data", class = "btn-primary"),
+                 selectInput("mk_expiry", "Option expiry", choices = character(0)),
+                 h4("Inputs (assumptions)"),
+                 numericInput("mk_r", "Interest rate (r, typed in)", 0.04, step = 0.0025),
+                 numericInput("mk_q", "Dividend yield (q). 0 suits TSLA; enter the yield for dividend payers", 0, step = 0.005),
+                 numericInput("mk_lo", "Strike window, lowest (% of spot)", 70, step = 5),
+                 numericInput("mk_hi", "Strike window, highest (% of spot)", 130, step = 5),
+                 radioButtons("mk_spot_src", "Spot price used for cleaning",
+                              choices = c("Option-implied (recommended)" = "implied",
+                                          "Last close" = "close")),
+               ),
+               mainPanel(
+                 div(class = "result-card",
+                     h3("Market data"),
+                     tableOutput("mk_table"),
+                     textOutput("mk_note")),
+                 div(class = "result-card", style = "margin-top: 20px;",
+                     h3("Option chain for the selected expiry"),
+                     textOutput("mk_info"),
+                     h4("Cleaning"),
+                     tableOutput("mk_counts"),
+                     h4("Clean quotes"),
+                     tableOutput("mk_quotes"))
                )
              )
     )
   )
+)
+
 
 
 server <- function(input, output, session) {
@@ -410,6 +449,132 @@ server <- function(input, output, session) {
       paste0("Rate source: SAVED fallback, ", sprintf("%.2f%%", 100 * g$rate),
              " from ", g$date, ". Could not reach the Bank of Canada.")
     }
+  })
+  
+  # ---- Market tab: load data ----
+  mk <- reactiveVal(NULL)
+  
+  observeEvent(input$mk_load, {
+    withProgress(message = "Loading market data...", value = 0.5, {
+      m <- fetch_market(input$mk_ticker)
+      mk(m)
+      if (is.null(m$error)) {
+        ex  <- m$expiries[m$expiries >= Sys.Date()]
+        far <- ex[ex >= Sys.Date() + 30]
+        sel <- if (length(far) > 0) far[1] else tail(ex, 1)
+        updateSelectInput(session, "mk_expiry",
+                          choices = as.character(ex),
+                          selected = as.character(sel))
+      } else {
+        updateSelectInput(session, "mk_expiry", choices = character(0))
+      }
+    })
+  })
+  
+  output$mk_table <- renderTable({
+    m <- mk()
+    req(m)
+    validate(need(is.null(m$error), m$error))
+    n <- length(m$returns)
+    data.frame(
+      Measure = c("Ticker", "Last close", "Date of last close",
+                  "Historical volatility, last 30 days",
+                  "Historical volatility, last 90 days",
+                  paste0("Historical volatility, all ", n,
+                         " daily returns (about 1 year)"),
+                  "Option expiry dates available"),
+      Value = c(m$ticker, sprintf("%.2f", m$spot), m$last_date,
+                sprintf("%.2f%%", 100 * vol_window(m$returns, 30)),
+                sprintf("%.2f%%", 100 * vol_window(m$returns, 90)),
+                sprintf("%.2f%%", 100 * hist_vol(m$returns)),
+                as.character(length(m$expiries))))
+  })
+  
+  output$mk_note <- renderText({
+    m <- mk()
+    if (is.null(m)) {
+      "Enter a ticker and click Load market data."
+    } else if (!is.null(m$error)) {
+      NULL
+    } else {
+      "Prices come from Yahoo Finance and can lag by a day. Historical volatility looks backward; it is not a forecast."
+    }
+  })
+  
+  # ---- Market tab: chain for the selected expiry ----
+  mk_chain <- reactive({
+    m <- mk()
+    req(m, is.null(m$error), input$mk_expiry)
+    validate(
+      need(is.finite(input$mk_r), "Enter an interest rate."),
+      need(is.finite(input$mk_q) && input$mk_q >= 0 && input$mk_q < 1,
+           "Dividend yield must be between 0 and 1 (e.g. 0.005)."),
+      need(is.finite(input$mk_lo) && is.finite(input$mk_hi) &&
+             input$mk_lo > 0 && input$mk_lo < 100 &&
+             input$mk_hi > 100 && input$mk_hi <= 300,
+           "Strike window: lowest % between 0 and 100, highest % between 100 and 300.")
+    )
+    ex  <- as.Date(input$mk_expiry)
+    idx <- match(ex, m$expiries)
+    validate(need(!is.na(idx), "Pick an expiry."))
+    days <- as.numeric(ex - Sys.Date())
+    validate(need(days >= 1, "That expiry is today or in the past. Pick a later one."))
+    ch <- m$chain[[idx]]
+    need_cols <- c("Strike", "Bid", "Ask", "OI")
+    validate(
+      need(!is.null(ch$calls) && !is.null(ch$puts) &&
+             nrow(ch$calls) > 0 && nrow(ch$puts) > 0,
+           "No calls or puts were found for this expiry."),
+      need(all(need_cols %in% names(ch$calls)) && all(need_cols %in% names(ch$puts)),
+           "The option data is missing expected columns.")
+    )
+    T_in <- days / 365
+    imp  <- implied_spot(ch$calls, ch$puts, m$spot, input$mk_r, input$mk_q, T_in)
+    src_choice <- if (is.null(input$mk_spot_src)) "implied" else input$mk_spot_src
+    use_imp    <- identical(src_choice, "implied") && is.finite(imp$spot)
+    spot_used <- if (use_imp) imp$spot else m$spot
+    cl <- clean_chain(ch$calls, ch$puts, spot_used, input$mk_r, input$mk_q,
+                      T_in, input$mk_lo / 100, input$mk_hi / 100)
+    c(cl, list(expiry = ex, days = days, close = m$spot, close_date = m$last_date,
+               implied = imp$spot, n_imp = imp$n,
+               spot_used = spot_used, use_imp = use_imp))
+  })
+  
+  output$mk_info <- renderText({
+    x <- tryCatch(mk_chain(), error = function(e) NULL)
+    req(x)
+    src <- if (x$use_imp) {
+      paste0("option-implied spot ", sprintf("%.2f", x$implied),
+             " (median of ", x$n_imp, " strikes)")
+    } else if (is.finite(x$implied)) {
+      paste0("last close ", sprintf("%.2f", x$close))
+    } else {
+      paste0("last close ", sprintf("%.2f", x$close),
+             " (no usable call and put pair for an implied spot)")
+    }
+    paste0("Expiry ", x$expiry, ": ", x$days, " days away (T = ",
+           sprintf("%.4f", x$days / 365), " years). Spot used for cleaning: ", src,
+           ". For comparison, last close ", sprintf("%.2f", x$close), " from ",
+           x$close_date, ". The implied spot depends on the rate and dividend yield you typed.")
+  })
+  
+  output$mk_counts <- renderTable({
+    x <- mk_chain()
+    data.frame(Step = x$counts$Step, Rows = as.character(x$counts$Rows))
+  })
+  
+  output$mk_quotes <- renderTable({
+    x <- tryCatch(mk_chain(), error = function(e) NULL)
+    req(x)
+    d <- x$clean[order(x$clean$type, x$clean$Strike), ]
+    validate(need(nrow(d) > 0, "No quotes survived the cleaning rules."))
+    data.frame(Type = d$type,
+               Strike = sprintf("%.2f", d$Strike),
+               Bid = sprintf("%.2f", d$Bid),
+               Ask = sprintf("%.2f", d$Ask),
+               Mid = sprintf("%.3f", d$mid),
+               `Open interest` = format(d$OI, big.mark = ","),
+               check.names = FALSE)
   })
 }
 

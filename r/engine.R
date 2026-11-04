@@ -338,3 +338,129 @@ fetch_goc_yield <- function(series = "BD.CDN.10YR.DQ.YLD",
   out
 }
 
+# --- Safe snapshot of an option chain ---------------------------
+# Never overwrites. The date comes from the system clock (your computer's
+# time zone). To replace a snapshot, delete the file by hand first.
+save_chain_snapshot <- function(ticker, expiry, calls, puts, spot,
+                                dir = "data", date = Sys.Date()) {
+  calls$type <- "call"
+  puts$type  <- "put"
+  snap <- rbind(calls, puts)
+  snap$ticker        <- ticker
+  snap$expiry        <- as.character(expiry)
+  snap$snapshot_date <- as.character(date)
+  snap$spot          <- spot
+  
+  file <- file.path(dir, paste0(tolower(ticker), "_chain_", expiry,
+                                "_snapshot_", date, ".csv"))
+  
+  if (file.exists(file)) {
+    return(list(file = file, saved = FALSE, rows = nrow(snap)))
+  }
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
+  write.csv(snap, file, row.names = FALSE)
+  list(file = file, saved = TRUE, rows = nrow(snap))
+}
+
+
+# --- Market data loader (Yahoo via quantmod) --------------------
+# Returns the data, or list(error = "...") if anything fails.
+fetch_market <- function(ticker, days = 365) {
+  ticker <- toupper(trimws(ticker))
+  if (!grepl("^[A-Z0-9.^-]{1,10}$", ticker)) {
+    return(list(error = "Enter a valid ticker symbol (letters and numbers only)."))
+  }
+  tryCatch({
+    px <- quantmod::getSymbols(ticker, src = "yahoo",
+                               from = Sys.Date() - days, auto.assign = FALSE)
+    ad <- na.omit(quantmod::Ad(px))
+    if (nrow(ad) < 30) stop("Fewer than 30 days of prices found.")
+    rets <- na.omit(diff(log(ad)))
+    
+    ch <- quantmod::getOptionChain(ticker, Exp = NULL)
+    if (!is.list(ch) || length(ch) == 0) stop("No option chain found.")
+    ex <- as.Date(names(ch), format = "%b.%d.%Y")
+    if (any(is.na(ex))) stop("Could not read the expiry dates.")
+    
+    last <- tail(ad, 1)
+    list(ticker = ticker, prices = ad, returns = rets,
+         spot = as.numeric(last), last_date = as.character(zoo::index(last)),
+         chain = ch, expiries = ex)
+  }, error = function(e) {
+    msg <- conditionMessage(e)
+    if (grepl("Unable to import", msg)) {
+      msg <- paste0("No price data found for ", ticker, ". Check the symbol.")
+    }
+    list(error = msg)
+  })
+}
+
+
+# --- Historical volatility (annualized, sqrt(252) rule) --------
+hist_vol <- function(returns, trading_days = 252) {
+  r <- as.numeric(returns)
+  if (length(r) < 2) return(NA_real_)
+  sd(r) * sqrt(trading_days)
+}
+
+vol_window <- function(returns, days, trading_days = 252) {
+  hist_vol(tail(as.numeric(returns), days), trading_days)
+}
+
+
+# --- Clean one expiry's chain (rules from Phase 5) --------------
+# Returns the clean quotes and how many rows survive each rule.
+clean_chain <- function(calls, puts, spot, r, q, T, lo = 0.7, hi = 1.3) {
+  calls$type <- "call"
+  puts$type  <- "put"
+  x <- rbind(calls, puts)
+  x$mid <- (x$Bid + x$Ask) / 2
+  n0 <- nrow(x)
+  
+  x <- x[!is.na(x$Bid) & !is.na(x$Ask) & x$Bid > 0 & x$Ask > 0, ]
+  n1 <- nrow(x)
+  x <- x[!is.na(x$OI) & x$OI > 0, ]
+  n2 <- nrow(x)
+  x <- x[x$Strike >= lo * spot & x$Strike <= hi * spot, ]
+  n3 <- nrow(x)
+  x <- x[(x$type == "call" & x$Strike > spot) |
+           (x$type == "put"  & x$Strike < spot), ]
+  n4 <- nrow(x)
+  if (nrow(x) > 0) {
+    ok <- mapply(function(p, k, ty) {
+      check_bounds(p, spot, k, r, q, T, ty)$within_bounds
+    }, x$mid, x$Strike, x$type)
+    x <- x[ok, ]
+  }
+  n5 <- nrow(x)
+  
+  counts <- data.frame(
+    Step = c("All quotes (calls + puts)", "Bid and ask above 0",
+             "Open interest above 0", "Strike inside the window",
+             "Out of the money only", "Passes no-arbitrage bounds"),
+    Rows = c(n0, n1, n2, n3, n4, n5))
+  list(clean = x, counts = counts)
+}
+
+
+# --- Option-implied spot from put-call parity -------------------
+# Uses the k strikes nearest spot_guess that have a usable call and put.
+implied_spot <- function(calls, puts, spot_guess, r, q, T, k = 5) {
+  none <- list(spot = NA_real_, n = 0, detail = NULL)
+  both <- intersect(calls$Strike, puts$Strike)
+  if (length(both) == 0) return(none)
+  c1 <- calls[match(both, calls$Strike), ]
+  p1 <- puts[match(both, puts$Strike), ]
+  ok <- !is.na(c1$Bid) & !is.na(c1$Ask) & !is.na(p1$Bid) & !is.na(p1$Ask) &
+    c1$Bid > 0 & c1$Ask > 0 & p1$Bid > 0 & p1$Ask > 0 &
+    !is.na(c1$OI) & !is.na(p1$OI) & c1$OI > 0 & p1$OI > 0
+  both <- both[ok]; c1 <- c1[ok, ]; p1 <- p1[ok, ]
+  if (length(both) == 0) return(none)
+  use <- order(abs(both - spot_guess))[seq_len(min(k, length(both)))]
+  Cm  <- (c1$Bid[use] + c1$Ask[use]) / 2
+  Pm  <- (p1$Bid[use] + p1$Ask[use]) / 2
+  K   <- both[use]
+  s   <- (Cm - Pm + K * exp(-r * T)) * exp(q * T)
+  list(spot = median(s), n = length(s),
+       detail = data.frame(Strike = K, Implied_spot = s))
+}
