@@ -464,3 +464,17 @@ implied_spot <- function(calls, puts, spot_guess, r, q, T, k = 5) {
   list(spot = median(s), n = length(s),
        detail = data.frame(Strike = K, Implied_spot = s))
 }
+
+
+# --- Implied volatility for each cleaned quote ------------------
+# Quotes with no valid answer get NA.
+add_implied_vol <- function(clean, spot, r, q, T) {
+  if (nrow(clean) == 0) {
+    clean$iv <- numeric(0)
+    return(clean)
+  }
+  clean$iv <- mapply(function(p, k, ty) {
+    bs_implied_vol(p, spot, k, r, q, T, ty)
+  }, clean$mid, clean$Strike, clean$type)
+  clean
+}

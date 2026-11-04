@@ -173,7 +173,11 @@ ui <- fluidPage(
                      h4("Cleaning"),
                      tableOutput("mk_counts"),
                      h4("Clean quotes"),
-                     tableOutput("mk_quotes"))
+                     tableOutput("mk_quotes")),
+                 div(class = "result-card", style = "margin-top: 20px;",
+                     h3("Volatility smile"),
+                     textOutput("mk_smile_note"),
+                     plotOutput("mk_smile_plot", height = "360px"))
                )
              )
     )
@@ -575,6 +579,50 @@ server <- function(input, output, session) {
                Mid = sprintf("%.3f", d$mid),
                `Open interest` = format(d$OI, big.mark = ","),
                check.names = FALSE)
+  })
+  
+  # ---- Market tab: volatility smile ----
+  mk_iv <- reactive({
+    x <- mk_chain()
+    d <- add_implied_vol(x$clean, x$spot_used, input$mk_r, input$mk_q,
+                         x$days / 365)
+    list(data = d, spot_used = x$spot_used, expiry = x$expiry, days = x$days)
+  })
+  
+  output$mk_smile_note <- renderText({
+    x <- tryCatch(mk_iv(), error = function(e) NULL)
+    req(x)
+    n  <- nrow(x$data)
+    req(n > 0)
+    ok <- sum(!is.na(x$data$iv))
+    paste0(ok, " of ", n, " clean quotes have an implied volatility.",
+           if (ok < n) paste0(" ", n - ok, " could not be solved (price at or ",
+                              "outside the no-arbitrage limits for this spot ",
+                              "and rate) and are left out."),
+           " Black-Scholes assumes European exercise; US stock options are American, ",
+           "so low-strike puts may be slightly distorted.")
+  })
+  
+  output$mk_smile_plot <- renderPlot({
+    x <- tryCatch(mk_iv(), error = function(e) NULL)
+    req(x)
+    d <- x$data[!is.na(x$data$iv), ]
+    req(nrow(d) > 0)
+    d  <- d[order(d$Strike), ]
+    m  <- mk()
+    hv <- hist_vol(m$returns)
+    plot(d$Strike, 100 * d$iv, pch = 16,
+         col = ifelse(d$type == "put", "firebrick", "steelblue"),
+         xlab = "Strike", ylab = "Implied volatility (%)",
+         main = paste0(m$ticker, " volatility smile, expiry ", x$expiry),
+         ylim = range(c(100 * d$iv, 100 * hv)))
+    lines(d$Strike, 100 * d$iv, col = "grey60")
+    abline(h = 100 * hv, lty = 2)
+    abline(v = x$spot_used, lty = 3)
+    legend("topright", bty = "n",
+           pch = c(16, 16, NA, NA), lty = c(NA, NA, 2, 3),
+           col = c("firebrick", "steelblue", "black", "black"),
+           legend = c("Put", "Call", "1-year historical volatility", "Spot used"))
   })
 }
 
