@@ -478,3 +478,21 @@ add_implied_vol <- function(clean, spot, r, q, T) {
   }, clean$mid, clean$Strike, clean$type)
   clean
 }
+
+
+# --- Near-the-money implied volatility --------------------------
+# Average of the put and the call nearest the spot (one side if only
+# one side has a valid implied volatility).
+atm_iv <- function(d, spot) {
+  d <- d[!is.na(d$iv), ]
+  if (nrow(d) == 0) return(list(iv = NA_real_, n = 0, strikes = NULL))
+  pick <- function(x) if (nrow(x) == 0) x else x[which.min(abs(x$Strike - spot)), ]
+  both <- rbind(pick(d[d$type == "put", ]), pick(d[d$type == "call", ]))
+  list(iv = mean(both$iv), n = nrow(both),
+       strikes = both[, c("type", "Strike", "iv")])
+}
+
+# Which historical window (in trading days) is closest to an expiry
+closest_window <- function(days, windows = c(30, 90, 252)) {
+  windows[which.min(abs(windows - days * 252 / 365))]
+}

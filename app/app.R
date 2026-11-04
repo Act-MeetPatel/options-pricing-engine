@@ -177,7 +177,11 @@ ui <- fluidPage(
                  div(class = "result-card", style = "margin-top: 20px;",
                      h3("Volatility smile"),
                      textOutput("mk_smile_note"),
-                     plotOutput("mk_smile_plot", height = "360px"))
+                     plotOutput("mk_smile_plot", height = "360px")),
+                 div(class = "result-card", style = "margin-top: 20px;",
+                     h3("Implied vs. historical volatility"),
+                     tableOutput("mk_cmp_table"),
+                     textOutput("mk_cmp_note"))
                )
              )
     )
@@ -623,6 +627,41 @@ server <- function(input, output, session) {
            pch = c(16, 16, NA, NA), lty = c(NA, NA, 2, 3),
            col = c("firebrick", "steelblue", "black", "black"),
            legend = c("Put", "Call", "1-year historical volatility", "Spot used"))
+  })
+  
+  # ---- Market tab: implied vs historical volatility ----
+  output$mk_cmp_table <- renderTable({
+    x <- tryCatch(mk_iv(), error = function(e) NULL)
+    req(x)
+    m <- mk()
+    a <- atm_iv(x$data, x$spot_used)
+    validate(need(is.finite(a$iv), "No implied volatility available to compare."))
+    wins <- c(30, 90, 252)
+    hv   <- sapply(wins, function(w) vol_window(m$returns, w))
+    best <- closest_window(x$days)
+    data.frame(
+      Measure = c(paste0("Implied, near the money (",
+                         paste(a$strikes$type, a$strikes$Strike, collapse = ", "), ")"),
+                  "Historical, last 30 trading days",
+                  "Historical, last 90 trading days",
+                  paste0("Historical, all ", length(m$returns),
+                         " returns (about 1 year)")),
+      Volatility = sprintf("%.2f%%", 100 * c(a$iv, hv)),
+      `Implied minus historical` = c("", sprintf("%+.2f points", 100 * (a$iv - hv))),
+      `Closest to this expiry` = c("", ifelse(wins == best, "yes", "")),
+      check.names = FALSE)
+  })
+  
+  output$mk_cmp_note <- renderText({
+    x <- tryCatch(mk_iv(), error = function(e) NULL)
+    req(x)
+    a <- atm_iv(x$data, x$spot_used)
+    req(is.finite(a$iv))
+    paste0("This expiry is ", x$days, " calendar days away, about ",
+           round(x$days * 252 / 365), " trading days. Implied above a historical ",
+           "number means the options cost more than that period's movement would ",
+           "suggest; below means less. The answer depends on the window, and ",
+           "historical volatility looks backward. This is a comparison, not advice.")
   })
 }
 
