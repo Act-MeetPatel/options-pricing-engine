@@ -98,6 +98,33 @@ ui <- fluidPage(
                
                )
              )
+    ),
+    tabPanel("Seg fund",
+             sidebarLayout(
+               sidebarPanel(
+                 h4("Product"),
+                 numericInput("sf_P0", "Premium invested (P0)", seg_defaults()$P0),
+                 numericInput("sf_G", "Guarantee at maturity (G)", seg_defaults()$G),
+                 numericInput("sf_T", "Term in years (T)", seg_defaults()$T),
+                 numericInput("sf_fee", "Yearly fee (e.g. 0.025)", seg_defaults()$fee, step = 0.005),
+                 h4("Market (assumptions)"),
+                 numericInput("sf_sigma", "Volatility (sigma)", seg_defaults()$sigma, step = 0.01),
+                 numericInput("sf_r", "Interest rate (r)", seg_defaults()$r, step = 0.0025),
+                 h4("Policyholder (assumptions)"),
+                 numericInput("sf_age", "Issue age", seg_defaults()$age),
+                 numericInput("sf_lapse", "Lapse rate per year", seg_defaults()$lapse, step = 0.01),
+                 h4("Mortality (Gompertz-Makeham)"),
+                 numericInput("sf_A", "A", seg_defaults()$gm$A, step = 0.00001),
+                 numericInput("sf_B", "B", seg_defaults()$gm$B, step = 0.0000001),
+                 numericInput("sf_C", "C", seg_defaults()$gm$C, step = 0.001)
+               ),
+               mainPanel(
+                 div(class = "result-card",
+                     h3("Results"),
+                     tableOutput("sf_table"),
+                     textOutput("sf_note"))
+               )
+             )
     )
   )
 )
@@ -198,6 +225,66 @@ server <- function(input, output) {
     abline(h = 0, col = "grey60")
     abline(v = be, lty = 2, col = "firebrick")
     abline(v = input$S, lty = 3)
+  })
+  sf_assump <- reactive({
+    validate(
+      need(input$sf_P0 > 0,    "Premium must be positive."),
+      need(input$sf_G > 0,     "Guarantee must be positive."),
+      need(input$sf_T > 0,     "Term must be positive."),
+      need(is.finite(input$sf_fee) && input$sf_fee >= 0 && input$sf_fee < 1,
+           "Fee must be between 0 and 1 (e.g. 0.025)."),
+      need(input$sf_sigma > 0, "Volatility must be positive."),
+      need(is.finite(input$sf_r), "Enter an interest rate."),
+      need(is.finite(input$sf_age) && input$sf_age >= 0 && input$sf_age <= 110,
+           "Issue age must be between 0 and 110."),
+      need(is.finite(input$sf_lapse) && input$sf_lapse >= 0 && input$sf_lapse < 1,
+           "Lapse rate must be between 0 and 1."),
+      need(is.finite(input$sf_A) && input$sf_A >= 0, "A must be 0 or more."),
+      need(is.finite(input$sf_B) && input$sf_B >= 0, "B must be 0 or more."),
+      need(is.finite(input$sf_C) && input$sf_C > 1,  "C must be above 1.")
+    )
+    a <- seg_defaults()
+    a$P0 <- input$sf_P0;   a$G <- input$sf_G;   a$T <- input$sf_T
+    a$fee <- input$sf_fee; a$sigma <- input$sf_sigma; a$r <- input$sf_r
+    a$age <- input$sf_age; a$lapse <- input$sf_lapse
+    a$gm <- list(A = input$sf_A, B = input$sf_B, C = input$sf_C)
+    a
+  })
+  
+  sf_res <- reactive({
+    a  <- sf_assump()
+    ff <- tryCatch(fair_fee(a), error = function(e) NA_real_)
+    list(cost = guarantee_cost(a),
+         alive = surv_gm(a$age, a$T, a$gm),
+         persist = (1 - a$lapse)^a$T,
+         inforce = in_force(a),
+         cost_dec = guarantee_cost_dec(a),
+         fair = ff)
+  })
+  
+  output$sf_table <- renderTable({
+    x <- sf_res()
+    data.frame(
+      Measure = c("Guarantee cost, if the policy lasts to maturity",
+                  "Chance alive at maturity",
+                  "Chance not lapsed at maturity",
+                  "Chance still in force at maturity",
+                  "Guarantee cost with mortality and lapses",
+                  "Fair guarantee fee (per year)"),
+      Value = c(sprintf("%.4f", x$cost),
+                sprintf("%.4f", x$alive),
+                sprintf("%.4f", x$persist),
+                sprintf("%.4f", x$inforce),
+                sprintf("%.4f", x$cost_dec),
+                if (is.na(x$fair)) "not found"
+                else sprintf("%.4f%%", 100 * x$fair)))
+  })
+  
+  output$sf_note <- renderText({
+    x <- tryCatch(sf_res(), error = function(e) NULL)
+    req(x)
+    if (is.na(x$fair)) "The fair fee could not be found for these inputs."
+    else "Risk-neutral pricing. Mortality and lapses are assumed independent of each other and of the market. The fair fee treats the whole fee as the guarantee charge."
   })
 }
 
