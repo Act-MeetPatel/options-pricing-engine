@@ -107,3 +107,24 @@
 | 103 | P5b S15 | Save model vs. market plot | `png()` | Used in doc | Tent shape; 400 call may be cut off at the top edge |
 | 104 | P5 S16 | Write `docs/phase5.md` | none | Same pattern as earlier phases | Includes mistakes and limits |
 | 105 | P5 S16 | One commit closes Phase 5 | Git tab | Clean history | Message: "Phase 5: market data, implied volatility, smile" |
+| 106 | P5 close | Keep r = 4% in Phase 5 (your choice); fix the rate where needed in later phases | `r_in` | The smile and main findings don't depend on it | Flagged as a placeholder in the docs and the final report |
+| 107 | P6 S1 | Define the seg fund product in one adjustable list | `seg` | You asked for every assumption to be adjustable | P0 100, G 100, T 10, fee 2.5%, sigma 20%, age 50, lapse 5% |
+| 108 | P6 S2 | Price the guarantee as a put with q = fee | `guarantee_cost()` | The fee leaves the fund continuously, like a dividend | 13.04 at r = 4%; sigma near 0 gives 0 |
+| 109 | P6 S3 | Gompertz-Makeham survival times (1 - lapse)^t | `surv_gm()`, `in_force()` | The guarantee pays only if the policy is in force at year 10 | In force 0.5869; cost 7.66 at r = 4%. Mortality and lapses assumed independent |
+| 110 | P6 S4 | Monte Carlo check of the guarantee (risk-neutral) | `mc_guarantee()` | Independent check that fee = dividend yield | 13.050 vs 13.043; coverage 96% |
+| 111 | P6 S5 | Sensitivity table, rate and volatility | `sens` | A 10-year guarantee reacts strongly to both | 1 point of rate moves the price by about 3 to 4 |
+| 112 | P6 S6 | Use r = 3.8% (Canada 10-year yield, mid-Oct 2026) | `seg$r <- 0.038` | Replace the 4% placeholder with a sourced rate | From a Trading Economics summary, not the official series. Cost 13.77, with decrements 8.08 |
+| 113 | Process | Record sources in `docs/sources.md` | none | Your request: cite sources properly | Barrier constant and barrier formula were typed from memory; to be checked before the final report |
+| 114 | P6 S7 | Solve the fair fee with `uniroot()` | `fair_fee()`, `fee_gap()` | The fee appears on both sides, so no formula | 0.788%; income 5.9066 vs cost 5.9071 |
+| 115 | P6 S7 | Treat the whole fee as the guarantee charge | none | Simplification | Real fees also cover expenses and commissions |
+| 116 | P6 S8a | Real-world fund paths (drift mu = 7%) | `simulate_fund_real()` | Hedging and reserves use the real world, pricing the risk-neutral | Fund below G at year 10 in 34.0% of paths |
+| 117 | P6 S8b | Weekly delta hedge, funded by the put price | `hedge_error()` | Shows replication over 520 steps | Mean error 0.0008, SD 0.98 vs. unhedged 18.31 |
+| 118 | P6 S8c | Compare hedging frequencies | `hedge_sd()` | Error should fall with more rebalancing | SD 2.05, 0.96, 0.43 for 12, 52, 252 a year |
+| 119 | P6 S9a | CTE95 of the unhedged loss | `unhedged_loss()`, `cte()` | A tail measure for capital | Mean -1.11, CTE95 38.56 |
+| 120 | P6 S9b | Sensitivity of CTE to mu and sigma | `cte_for()` | Reserve depends on the real-world view | mu 4/7/9%: 45.63, 38.56, 32.57. Fair fee recomputed for each sigma |
+| 121 | P6 S10 | Decrements in the reserve (large-pool assumption) | `unhedged_loss_dec()` | Payout scales by 0.587, fees by in-force at t | CTE95 21.61 |
+| 122 | P6 S10 | My Step 10 hedge tests only confirmed a multiplication | none | I overclaimed | Corrected when you asked |
+| 123 | P6 S10b | Independent hedge with decrements | `hedge_error_dec()` | Checks the 0.587 shortcut | Agreement 5e-13. Weights constant, so it tests code and survival maths, not the large-pool assumption |
+| 124 | P6 S11 | Save two plots | `png()` | Used in the doc | `seg_hedge_error.png` uses the no-decrement hedge |
+| 125 | P6 S12 | Write `docs/phase6.md` | none | Same pattern as earlier phases | Includes assumptions, sources, mistakes |
+| 126 | P6 S13 | One commit closes Phase 6 | Git tab | Clean history | Message: "Phase 6: seg fund guarantee, fair fee, hedging, CTE" |
