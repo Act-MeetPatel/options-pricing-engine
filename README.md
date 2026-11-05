@@ -5,7 +5,7 @@ Monte Carlo), checked against each other, tested on real Tesla option data, and
 applied to a segregated fund guarantee, which is a put option the insurer has
 sold. It ends in a three-tab Shiny app and a written report.
 
-**Report:** (link added once GitHub Pages is live)
+**Report:** https://act-meetpatel.github.io/options-pricing-engine/
 The report is also in this repo as a single file, `docs/index.html`.
 
 ## What it does
