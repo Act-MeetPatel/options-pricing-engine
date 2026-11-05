@@ -1,0 +1,48 @@
+/*-- scss:defaults --*/
+$primary: #1a5276;
+$secondary: #7fb3d5;
+$link-color: #1a5276;
+$headings-color: #1a5276;
+
+/*-- scss:rules --*/
+body::before {
+  content: "\1F4C8";
+  font-size: 500px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.12;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.callout {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+div.callout-tip.callout {
+  border-left-color: #1a5276;
+}
+div.callout-tip.callout-style-default > .callout-header {
+  background-color: rgba(26,82,118,0.12);
+}
+div.callout-note.callout {
+  border-left-color: #7fb3d5;
+}
+div.callout-note.callout-style-default > .callout-header {
+  background-color: rgba(127,179,213,0.18);
+}
+
+div.sourceCode, pre {
+  border-radius: 8px;
+}
+
+.footer {
+  position: fixed;
+  bottom: 15px;
+  right: 25px;
+  font-size: 12px;
+  color: #888;
+}

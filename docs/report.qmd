@@ -1,12 +1,13 @@
 ---
-title: "Option Pricing Engine"
+title: "📈 Option Pricing Engine"
 subtitle: "Binomial trees, Black-Scholes and Monte Carlo, applied to a segregated fund guarantee"
 author: "Meet Patel"
 date: today
 output-file: index.html
 format:
   html:
-    theme: flatly
+    theme: [flatly, report.scss]
+    include-after-body: footer.html
     toc: true
     toc-location: left
     toc-depth: 2
