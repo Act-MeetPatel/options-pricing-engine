@@ -2352,7 +2352,8 @@ window.Quarto = {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul class="collapse">
-  <li><a href="#options-from-scratch" id="toc-options-from-scratch" class="nav-link active" data-scroll-target="#options-from-scratch"><span class="header-section-number">1</span> Options from scratch</a>
+  <li><a href="#summary" id="toc-summary" class="nav-link active" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#options-from-scratch" id="toc-options-from-scratch" class="nav-link" data-scroll-target="#options-from-scratch"><span class="header-section-number">1</span> Options from scratch</a>
   <ul class="collapse">
   <li><a href="#what-an-option-is" id="toc-what-an-option-is" class="nav-link" data-scroll-target="#what-an-option-is"><span class="header-section-number">1.1</span> What an option is</a></li>
   <li><a href="#payoffs" id="toc-payoffs" class="nav-link" data-scroll-target="#payoffs"><span class="header-section-number">1.2</span> Payoffs</a></li>
@@ -2394,6 +2395,9 @@ window.Quarto = {
   <li><a href="#shrinking-the-error-without-more-simulations" id="toc-shrinking-the-error-without-more-simulations" class="nav-link" data-scroll-target="#shrinking-the-error-without-more-simulations"><span class="header-section-number">5.3</span> Shrinking the error without more simulations</a></li>
   <li><a href="#path-dependent-options" id="toc-path-dependent-options" class="nav-link" data-scroll-target="#path-dependent-options"><span class="header-section-number">5.4</span> Path-dependent options</a></li>
   <li><a href="#limits-of-this-chapter-3" id="toc-limits-of-this-chapter-3" class="nav-link" data-scroll-target="#limits-of-this-chapter-3"><span class="header-section-number">5.5</span> Limits of this chapter</a></li>
+  </ul></li>
+  <li><a href="#phase-5-market-data" id="toc-phase-5-market-data" class="nav-link" data-scroll-target="#phase-5-market-data"><span class="header-section-number">6</span> Phase 5: Market data</a>
+  <ul class="collapse">
   <li><a href="#historical-volatility" id="toc-historical-volatility" class="nav-link" data-scroll-target="#historical-volatility"><span class="header-section-number">6.1</span> Historical volatility</a></li>
   <li><a href="#the-option-chain" id="toc-the-option-chain" class="nav-link" data-scroll-target="#the-option-chain"><span class="header-section-number">6.2</span> The option chain</a></li>
   <li><a href="#cleaning" id="toc-cleaning" class="nav-link" data-scroll-target="#cleaning"><span class="header-section-number">6.3</span> Cleaning</a></li>
@@ -2415,6 +2419,9 @@ window.Quarto = {
   <li><a href="#hedging" id="toc-hedging" class="nav-link" data-scroll-target="#hedging"><span class="header-section-number">7.8</span> Hedging</a></li>
   <li><a href="#the-reserve" id="toc-the-reserve" class="nav-link" data-scroll-target="#the-reserve"><span class="header-section-number">7.9</span> The reserve</a></li>
   <li><a href="#limits-of-this-chapter-5" id="toc-limits-of-this-chapter-5" class="nav-link" data-scroll-target="#limits-of-this-chapter-5"><span class="header-section-number">7.10</span> Limits of this chapter</a></li>
+  </ul></li>
+  <li><a href="#phase-7-the-app" id="toc-phase-7-the-app" class="nav-link" data-scroll-target="#phase-7-the-app"><span class="header-section-number">8</span> Phase 7: The app</a>
+  <ul class="collapse">
   <li><a href="#how-to-run-it" id="toc-how-to-run-it" class="nav-link" data-scroll-target="#how-to-run-it"><span class="header-section-number">8.1</span> How to run it</a></li>
   <li><a href="#the-functions-behind-it" id="toc-the-functions-behind-it" class="nav-link" data-scroll-target="#the-functions-behind-it"><span class="header-section-number">8.2</span> The functions behind it</a></li>
   <li><a href="#tab-1-pricing" id="toc-tab-1-pricing" class="nav-link" data-scroll-target="#tab-1-pricing"><span class="header-section-number">8.3</span> Tab 1: Pricing</a></li>
@@ -2474,6 +2481,8 @@ window.Quarto = {
 </header>
 
 
+<section id="summary" class="level1 unnumbered">
+<h1 class="unnumbered">Summary</h1>
 <p>This project prices options three independent ways, checks the methods against each other, tests them on real Tesla option data, and applies them to an insurance problem: the minimum-return guarantee on a segregated fund, which is a put option the insurer has sold. It ends in a three-tab app.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -2543,6 +2552,7 @@ window.Quarto = {
 <p>The first two lines of the table come from code that runs when this report is built. The others are from the chapters named, where the code is shown.</p>
 <p><strong>What the checks showed.</strong> The tree, the formula and the simulation agree to a few cents. Put-call parity holds to rounding error on every method. Every Greek was compared with a direct nudge calculation. In the seg fund chapter, the formula and a simulation gave the same price, and the hedge removed most of the risk.</p>
 <p><strong>What to be careful about.</strong> Most inputs in the seg fund chapter are assumptions, not data: the 20% volatility, the 7% expected return, the 5% lapse rate, and the independence of lapses from the market. The results move a lot with the interest rate and the volatility. Black-Scholes is a European-option formula and Tesla’s options are American. And real options show a volatility <strong>smile</strong>, which a single volatility cannot match. Chapter 9 gathers all of these, and Chapter 10 lists the mistakes found along the way.</p>
+</section>
 <section id="options-from-scratch" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Options from scratch</h1>
 <div class="callout callout-style-default callout-tip callout-titled" title="In plain words">
@@ -4028,13 +4038,16 @@ Figure 6: Twenty simulated paths with the barrier at 90. Red paths touch it.
 <section id="limits-of-this-chapter-3" class="level2" data-number="5.5">
 <h2 data-number="5.5" class="anchored" data-anchor-id="limits-of-this-chapter-3"><span class="header-section-number">5.5</span> Limits of this chapter</h2>
 <ul>
-<li><p>Every Monte Carlo number is random. A different seed gives slightly different results. I fix the seed so the report is repeatable.</p></li>
-<li><p>The exact barrier formula needs the barrier below both the stock and the strike, and continuous monitoring. I typed it from memory and did not check it against a source, though the adjusted simulation agrees with it.</p></li>
-<li><p>The Asian average uses 50 points, not a continuous average.</p></li>
-<li><p>Variance reduction works well for a call or a put. For a payoff that rises on both sides, like a straddle, the antithetic pairs would offset less.</p></li>
-<li><p>The standard error itself is an estimate, and I did not measure how noisy the coverage counts are beyond the one run of 200.</p>
-<h1 id="phase-5-market-data" data-number="6"><span class="header-section-number">6</span> Phase 5: Market data</h1></li>
+<li>Every Monte Carlo number is random. A different seed gives slightly different results. I fix the seed so the report is repeatable.</li>
+<li>The exact barrier formula needs the barrier below both the stock and the strike, and continuous monitoring. I typed it from memory and did not check it against a source, though the adjusted simulation agrees with it.</li>
+<li>The Asian average uses 50 points, not a continuous average.</li>
+<li>Variance reduction works well for a call or a put. For a payoff that rises on both sides, like a straddle, the antithetic pairs would offset less.</li>
+<li>The standard error itself is an estimate, and I did not measure how noisy the coverage counts are beyond the one run of 200.</li>
 </ul>
+</section>
+</section>
+<section id="phase-5-market-data" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Phase 5: Market data</h1>
 <div class="callout callout-style-default callout-tip callout-titled" title="In plain words">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -4049,7 +4062,6 @@ Figure 6: Twenty simulated paths with the barrier at 90. Red paths touch it.
 </div>
 </div>
 <p>This chapter uses a snapshot saved on 2026-11-02, so its numbers do not change. The interest rate is a placeholder: 4%. The dividend yield is 0, because Tesla pays none.</p>
-</section>
 <section id="historical-volatility" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="historical-volatility"><span class="header-section-number">6.1</span> Historical volatility</h2>
 <p>A daily <strong>log return</strong> is ln(today’s price / yesterday’s price). Volatility is the standard deviation of those returns, scaled to a year by multiplying by the square root of 252 trading days. Volatility grows with the square root of time, the same square root as in the formulas of Chapters 3 to 5.</p>
@@ -5146,15 +5158,18 @@ Figure 9: Unhedged loss per policy sold, in today’s money, with mortality and
 <section id="limits-of-this-chapter-5" class="level2" data-number="7.10">
 <h2 data-number="7.10" class="anchored" data-anchor-id="limits-of-this-chapter-5"><span class="header-section-number">7.10</span> Limits of this chapter</h2>
 <ul>
-<li><p><strong>Lapses are assumed independent of the market.</strong> In real life, people cancel more when the guarantee is worthless. This likely understates the true cost and the reserve.</p></li>
-<li><p><strong>Large pool.</strong> The in-force fraction is treated as exactly its expected value. A real block of policies has random deaths and lapses on top, which adds risk that this model leaves out.</p></li>
-<li><p><strong>Constant volatility</strong> of 20%, and no jumps. Real crashes are worse than this model allows, so the true tail is likely heavier.</p></li>
-<li><p>The whole fee is treated as the guarantee charge, with no expenses or commissions, and the hedge has no transaction costs.</p></li>
-<li><p>The reserve uses 5,000 paths, so its worst 5% is the worst 250 paths, which is noisy. I did not measure how noisy.</p></li>
-<li><p>Mortality is the same for everyone, with no sex or smoker split.</p></li>
-<li><p>Every number depends on the assumptions in the table above, especially the expected return, the volatility and the interest rate.</p>
-<h1 id="phase-7-the-app" data-number="8"><span class="header-section-number">8</span> Phase 7: The app</h1></li>
+<li><strong>Lapses are assumed independent of the market.</strong> In real life, people cancel more when the guarantee is worthless. This likely understates the true cost and the reserve.</li>
+<li><strong>Large pool.</strong> The in-force fraction is treated as exactly its expected value. A real block of policies has random deaths and lapses on top, which adds risk that this model leaves out.</li>
+<li><strong>Constant volatility</strong> of 20%, and no jumps. Real crashes are worse than this model allows, so the true tail is likely heavier.</li>
+<li>The whole fee is treated as the guarantee charge, with no expenses or commissions, and the hedge has no transaction costs.</li>
+<li>The reserve uses 5,000 paths, so its worst 5% is the worst 250 paths, which is noisy. I did not measure how noisy.</li>
+<li>Mortality is the same for everyone, with no sex or smoker split.</li>
+<li>Every number depends on the assumptions in the table above, especially the expected return, the volatility and the interest rate.</li>
 </ul>
+</section>
+</section>
+<section id="phase-7-the-app" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Phase 7: The app</h1>
 <div class="callout callout-style-default callout-tip callout-titled" title="In plain words">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -5168,7 +5183,6 @@ Figure 9: Unhedged loss per policy sold, in today’s money, with mortality and
 <p>The app lets someone use all of this without reading any code. It has three tabs. <strong>Pricing</strong> prices one option three ways and shows its sensitivities. <strong>Seg fund</strong> prices the guarantee and shows the fair fee, the hedge and the reserve, with every assumption an input box. <strong>Market</strong> takes any ticker and compares what the options market charges with what the stock actually did. Every assumption can be changed, and every demo value is labelled as an assumption.</p>
 </div>
 </div>
-</section>
 <section id="how-to-run-it" class="level2" data-number="8.1">
 <h2 data-number="8.1" class="anchored" data-anchor-id="how-to-run-it"><span class="header-section-number">8.1</span> How to run it</h2>
 <ol type="1">
@@ -5433,7 +5447,7 @@ $greeks
 </section>
 <section id="how-this-was-built" class="level2" data-number="9.5">
 <h2 data-number="9.5" class="anchored" data-anchor-id="how-this-was-built"><span class="header-section-number">9.5</span> How this was built</h2>
-<p>I built this project step by step with an AI assistant (Claude, by Anthropic). Each step was a small piece of code with a test, and I ran each one and checked its output. Every decision is recorded in <code>docs/decision_log.md</code>. The assistant’s predictions were sometimes wrong, and running the code caught them (see the next chapter). Several formulas were written from memory, and the sources chapter marks which. I can explain every part of this project.</p>
+<p>I built this project step by step with an AI assistant (Claude, by Anthropic). Each step was a small piece of code with a test, and I ran each one and checked its output. Every decision is recorded in <code>docs/decision_log.md</code>. The assistant’s predictions were sometimes wrong, and running the code caught them (see the next chapter). Several formulas were written from memory, and the sources chapter marks which can explain every part of this project.</p>
 </section>
 </section>
 <section id="mistakes-and-what-i-would-do-differently" class="level1" data-number="10">

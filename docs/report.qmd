@@ -27,6 +27,8 @@ source("../r/engine.R")
 set.seed(3130)
 ```
 
+# Summary {.unnumbered}
+
 This project prices options three independent ways, checks the methods
 against each other, tests them on real Tesla option data, and applies them to
 an insurance problem: the minimum-return guarantee on a segregated fund, which
@@ -1004,7 +1006,7 @@ abline(h = 90, lty = 2, lwd = 2)
 - The standard error itself is an estimate, and I did not measure how noisy the
   coverage counts are beyond the one run of 200.
   
-  # Phase 5: Market data
+# Phase 5: Market data
 
 ::: {.callout-tip title="In plain words"}
 This is where the models meet real data. I asked two questions about Tesla.
@@ -1604,7 +1606,7 @@ assumption. For each volatility, the fair fee is recomputed.
 - Every number depends on the assumptions in the table above, especially the
   expected return, the volatility and the interest rate.
   
-  # Phase 7: The app
+# Phase 7: The app
 
 ::: {.callout-tip title="In plain words"}
 The app lets someone use all of this without reading any code. It has three
